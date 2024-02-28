@@ -21,6 +21,7 @@ library("tidyr")
 if (!require("Hmisc")) install.packages("Hmisc")
 library("Hmisc")
 
+library(purrr)
 
 # get ontology ------------------------------------------------------------
 
@@ -39,19 +40,11 @@ parents <- mp[[3]]
 children <- mp[[4]]
 ancestors <- mp[[5]]
 
-
 # set of functions to convert these lists to data frames ------------------
 
 get_parent_nodes <- function(parents) {
   
-  mp_term <- list()
-  mp_parents <-list()
-  
-  for(i in 1:length(names(parents))) {
-    
-    mp_term [[i]] <- names(parents)[i]
-    mp_parents[[i]] <- paste(parents[[i]], collapse = ",")
-  }
+  # no need to loops here, the map function from purr does it for you
   
   mp_parents <- data.frame(
     mp_term = do.call(rbind, mp_term),
@@ -69,18 +62,9 @@ get_parent_nodes <- function(parents) {
 
 get_children_nodes <- function(children){
   
-  mp_term <- list()
-  mp_children <- list()
-  
-  for(i in 1:length(names(children))) {
-    
-    mp_term [[i]] <- names(children)[i]
-    mp_children[[i]] <- paste(children[[i]], collapse = ",")
-  }
-  
   mp_children <- data.frame(
-    mp_term = do.call(rbind, mp_term), 
-    mp_children = do.call(rbind, mp_children), stringsAsFactors = F) %>%
+    mp_term = names(children), 
+    mp_children = unlist(map(children, paste, collapse = ","))) %>%
     mutate(mp_children = strsplit(as.character(mp_children), ",")) %>%
     unnest(mp_children) %>%
     filter(mp_term != mp_children)
@@ -93,18 +77,9 @@ get_children_nodes <- function(children){
 
 get_ancestor_nodes <- function(ancestors) {
   
-  mp_term <- list()
-  mp_ancestors <- list()
-  
-  for(i in 1:length(names(ancestors))) {
-    
-    mp_term [[i]] <- names(ancestors)[i]
-    mp_ancestors[[i]] <- paste(ancestors[[i]], collapse = ",")
-  }
-  
   mp_ancestors <- data.frame(
-    mp_term = do.call(rbind, mp_term),
-    mp_ancestors = do.call(rbind, mp_ancestors), stringsAsFactors = F) %>%
+    mp_term = names(ancestors),
+    mp_ancestors = unlist(map(ancestors, paste, collapse = ","))) %>%
     mutate(mp_ancestors = strsplit(as.character(mp_ancestors), ",")) %>%
     unnest(mp_ancestors) %>%
     filter(mp_term != mp_ancestors)
